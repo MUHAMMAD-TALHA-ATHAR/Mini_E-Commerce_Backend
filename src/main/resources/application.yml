@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: mini-ecommerce
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/mini_ecommerce_db
+    username: root
+    password: 0000
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  sql:
+    init:
+      mode: always
+
+app:
+  jwt:
+    secret: yourSuperSecretJwtKeyThatIsAtLeast256BitsLong1234567890
+    expiration: 86400000
