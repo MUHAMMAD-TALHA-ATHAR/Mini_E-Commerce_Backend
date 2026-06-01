@@ -1,0 +1,52 @@
+package com.java.projects.miniecommercebackend.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor
+
+@Entity
+@Table(name = "cart_items")
+public class CartItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id", nullable = false)
+    private Cart cart;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate(){
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate(){
+        updatedAt = LocalDateTime.now();
+    }
+
+}
