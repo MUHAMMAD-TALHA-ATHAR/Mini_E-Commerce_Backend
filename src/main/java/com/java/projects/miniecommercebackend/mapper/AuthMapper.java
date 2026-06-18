@@ -19,13 +19,14 @@ public class AuthMapper {
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
         user.setRole(Role.USER);
+
         return user;
     }
 
     public AuthResponse toAuthResponse(User user, String token) {
 
         return AuthResponse.builder()
-                .userId(user.getId())
+                .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phone(user.getPhone())

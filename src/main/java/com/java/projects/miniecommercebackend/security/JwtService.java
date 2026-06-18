@@ -15,6 +15,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * JWT Service
+ * Handles generating and validating JWT tokens
+ */
 @Service
 public class JwtService {
 
@@ -24,27 +28,21 @@ public class JwtService {
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
-
-    // TOKEN GENERATION
+    // Generate JWT token for user
     public String generateToken(User user) {
-
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
         claims.put("role", user.getRole().name());
 
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtExpirationMs);
-
         return Jwts.builder()
                 .claims(claims)
                 .subject(user.getEmail())
-                .issuedAt(now)
-                .expiration(expiry)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    // EXTRACT DATA
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
@@ -57,11 +55,7 @@ public class JwtService {
         return extractAllClaims(token).get("role", String.class);
     }
 
-    public Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
-    }
-
-    // VALIDATION
+    // Check if token is valid for the given user
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
@@ -71,7 +65,6 @@ public class JwtService {
         return extractAllClaims(token).getExpiration().before(new Date());
     }
 
-    // CORE PARSING
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -80,15 +73,13 @@ public class JwtService {
                 .getPayload();
     }
 
-    // SIGNING KEY
+    // Get signing key from secret
     private SecretKey getSigningKey() {
         try {
-            // Try Base64 first (recommended for production)
             byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
             return Keys.hmacShaKeyFor(keyBytes);
-
-        } catch (IllegalArgumentException ex) {
-            // Fallback for plain text secret (dev mode)
+        } catch (Exception ex) {
+            // Fallback for plain text secret (useful in development)
             byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
             return Keys.hmacShaKeyFor(keyBytes);
         }

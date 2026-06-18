@@ -1,6 +1,5 @@
 package com.java.projects.miniecommercebackend.config;
 
-
 import com.java.projects.miniecommercebackend.security.CustomUserDetailsService;
 import com.java.projects.miniecommercebackend.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +16,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Security Configuration for Mini E-Commerce
+ * This class configures:
+ * - JWT-based authentication (stateless)
+ * - Which endpoints are public vs protected
+ * - Role-based authorization support (@PreAuthorize)
+ */
 @Configuration
-@EnableMethodSecurity   // enables @PreAuthorize
+@EnableMethodSecurity  // Enables @PreAuthorize on controllers and services
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -33,24 +39,33 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())  // Disabled because we use JWT (stateless)
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // No HTTP session
+
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - no authentication needed
                         .requestMatchers(
-                                "/api/auth/**",
+                                "/api/auth/**",           // Register & Login
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/error"
+                                "/swagger-ui.html"
                         ).permitAll()
+
+                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
+
                 .authenticationProvider(authenticationProvider())
+
+                // Add our JWT filter before Spring's default filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    // Provider that uses our CustomUserDetailsService + PasswordEncoder
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
@@ -58,15 +73,14 @@ public class SecurityConfig {
         return provider;
     }
 
+    // BCryptPasswordEncoder for hashing passwords
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config
-    ) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 }

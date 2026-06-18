@@ -15,6 +15,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * JWT Authentication Filter
+ * This filter runs on every request to validate JWT token
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -31,37 +35,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // Get Authorization header
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
+        // If no Bearer token, continue without authentication
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwtToken = authHeader.substring(7);
+        String jwtToken = authHeader.substring(7);  // Remove "Bearer " prefix
         String username;
 
-        // 2. Extract username safely
         try {
             username = jwtService.extractUsername(jwtToken);
         } catch (JwtException | IllegalArgumentException ex) {
+            // Invalid token, continue without authentication
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Set authentication only if not already set
+        // If username found and user is not already authenticated
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            // 4. Validate token
+            // Validate token
             if (jwtService.isTokenValid(jwtToken, userDetails)) {
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
                                 userDetails.getAuthorities()
-                );
+                        );
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -69,7 +76,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 5. Continue filter chain
         filterChain.doFilter(request, response);
     }
 }
